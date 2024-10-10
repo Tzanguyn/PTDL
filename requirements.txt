@@ -2,3 +2,4 @@
 Scrapy
 pymongo
 itemadapter
+pyspark

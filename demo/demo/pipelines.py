@@ -16,14 +16,13 @@ import os
 
 
 
-class MongoDBUnitopPipeline:
+class MongoDBRugsPipeline:
     def __init__(self):
         
-        mongo_host = os.getenv('MONGO_HOST', 'localhost')
-        mongo_port = int(os.getenv('MONGO_PORT', 27017))
-        self.client = pymongo.MongoClient(mongo_host, mongo_port)
-        self.db = self.client['dbmycrawler']
-        self.collection = self.db['tblunitop']
+        self.client = pymongo.MongoClient('mongodb://192.168.1.8:27017')
+        self.db = self.client['rugs']
+        self.collection = self.db['rug_collection']
+        self.items = []
     
     def process_item(self, item, spider):
         
@@ -38,44 +37,32 @@ class MongoDBUnitopPipeline:
         self.client.close()
            
 class JsonDBUnitopPipeline:
-    def __init__(self):
-        self.file = open('jsondataunitop.json', 'a', encoding='utf-8')
-
     def process_item(self, item, spider):
-        try:
+        with open('data.json', 'a', encoding='utf-8') as file:
             line = json.dumps(dict(item), ensure_ascii=False) + '\n'
-            self.file.write(line)
-            return item
-        except Exception as e:
-            spider.logger.error(f"Error writing item to JSON file: {e}")
-            raise
+            file.write(line)
+        return item
 
-    def close_spider(self, spider):
-        self.file.close()
+    
 class CSVDBUnitopPipeline:
     
-    def __init__(self):
-        self.file = open('csvdataunitop.csv', 'a', encoding='utf-8', newline='')
-        self.writer = csv.writer(self.file, delimiter='$')
 
     def process_item(self, item, spider):
-        try:
-            self.writer.writerow([
-                item.get('coursename', 'N/A'),
-                item.get('lecturer', 'N/A'),
-                item.get('intro', 'N/A'),
-                item.get('describe', 'N/A'),
-                item.get('courseUrl', 'N/A'),
-                item.get('votenumber', 'N/A'),
-                item.get('rating', 'N/A'),
-                item.get('newfee', 'N/A'),
-                item.get('oldfee', 'N/A'),
-                item.get('lessonnum', 'N/A')
+        with open('data.csv', 'a', encoding='utf-8', newline='') as file:
+            writer = csv.writer(file, delimiter=',')
+            writer.writerow([
+                item['Name'],
+                item['Old_Price'],
+                item['Special_Price'],
+                item['Save'],
+                item['Material'],
+                item['Cleaning_Process'],
+                item['Pattern'],
+                item['Pile_height'],
+                item['Weight'],
+                item['Origin'],
+                item['Type'],
+                item['Product_Reviews'],
+            
             ])
-            return item
-        except Exception as e:
-            spider.logger.error(f"Error writing item to CSV file: {e}")
-            raise
-
-    def close_spider(self, spider):
-        self.file.close()
+        return item

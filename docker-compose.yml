@@ -1,19 +1,74 @@
-version: '3.8'
+version: '3'
 
 services:
-  scrapy:
-    build: .
-    volumes:
-      - .:/app
-    depends_on:
-      - mongodb
-
-  mongodb:
-    image: mongo:4.4
+  # Dịch vụ Zookeeper cho Kafka
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
+      - "2181:2181"
+    networks:
+      - pipeline_network
 
-volumes:
-  mongo_data:
+  # Dịch vụ Kafka
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    environment:
+      KAFKA_ADVERTISED_LISTENER: 'PLAINTEXT://kafka:9093'
+      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_PORT: 9093
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    ports:
+      - "9093:9093"
+    depends_on:
+      - zookeeper
+    networks:
+      - pipeline_network
+
+  # Dịch vụ Airflow
+  airflow:
+    image: apache/airflow:latest
+    container_name: airflow
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: redis://redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: 'fernet_key_here' # Thay thế fernet_key_here bằng fernet key thực tế
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - pipeline_network
+
+  # Dịch vụ PostgreSQL (Data Warehouse)
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5432:5432"
+    networks:
+      - pipeline_network
+
+  # Dịch vụ Redis (Celery Broker)
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - pipeline_network
+
+networks:
+  pipeline_network:
+    driver: bridge

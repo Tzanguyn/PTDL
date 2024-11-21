@@ -1,0 +1,10 @@
+# Dockerfile cho Airflow
+FROM apache/airflow:latest
+
+# Cấu hình môi trường cho Airflow
+ENV AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+ENV AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+ENV AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+ENV AIRFLOW__CELERY__RESULT_BACKEND=redis://redis:6379/0
+
+EXPOSE 8080

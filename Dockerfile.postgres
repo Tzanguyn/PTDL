@@ -1,0 +1,9 @@
+# Dockerfile cho PostgreSQL
+FROM postgres:latest
+
+# Cấu hình PostgreSQL
+ENV POSTGRES_USER=airflow
+ENV POSTGRES_PASSWORD=airflow
+ENV POSTGRES_DB=airflow
+
+EXPOSE 5432

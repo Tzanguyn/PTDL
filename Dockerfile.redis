@@ -1,0 +1,4 @@
+# Dockerfile cho Redis
+FROM redis:latest
+
+EXPOSE 6379
